@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>音声認識</title>
+</head>
+<body>
+音声認識が使えるテキストエディター<br>
+<br>
+　　　　　　　　<button onclick="startSpeechRecognition_2()">音声認識開始(連続)</button>
+  <button onclick="startSpeechRecognition_1()">音声認識開始(単回)</button>
+  <button onclick="stopSpeechRecognition()">音声認識停止</button><br>
+
+  <button onclick="writeToTextArea('、')">、</button>
+  <button onclick="writeToTextArea('。')">。</button>
+  <button onclick="writeToTextArea('\n')">改行</button>
+  <button onclick="writeToTextArea('')">選択部分を削除</button>
+　<button onclick="yomiage_kakunin()">選択範囲を読み上げ確認</button>
+  <button onclick="yomiage_stop()">読み上げ停止</button>
+  <button onclick="textBox_copy()">テキスト全体をコピー</button>
+
+<br>
+  <textarea id="output" rows="30" cols="100" style="font-size:15pt;" ></textarea><br>
+<br>
+
+<!-- ***************************************************************************************************************************** --> 
+<!-- ***************************************************************************************************************************** -->
+ <script>
+    // 音声認識オブジェクト
+    let recognition;
+    var kurikaesi_flg = 0;//1なら音声認識を繰り返す
+
+    var textBox = document.getElementById('output');
+    textBox.inputMode = "kana";//textBoxの初期入力モードは、この設定をしても、IME が平仮名だと ひらがな入力になりIME が半角英数だと半角英数字入力になる
+
+    var startPos = 0;//次に音声認識の結果が書かれるときに上書きされる範囲の開始位置
+    var endPos = 0;//次に音声認識の結果が書かれるときに上書きされる範囲の終了位置
+
+    // ブラウザが音声認識をサポートしているかチェック
+ //  if ('webkitSpeechRecognition' in window) {
+      // 音声認識オブジェクトの作成
+      recognition = new webkitSpeechRecognition();
+
+      // 認識言語を設定（日本語に設定）
+      recognition.lang = 'ja-JP';
+            recognition.interimResults = false;//true か false
+            recognition.continuous = false;
+
+     //======================================================================
+      // 音声認識開始時のイベントハンドラ
+      //recognition.onstart = function(event) {
+        //textBox.style.backgroundColor = "#FF9966"; // 背景色をオレンジ色にする
+      //};
+
+     //======================================================================
+      // 音声認識終了時のイベントハンドラ
+      recognition.onend = function(event) {
+       if (kurikaesi_flg == 2){
+         recognition.start();
+       }else if (kurikaesi_flg == 1){
+         kurikaesi_flg = 0;
+         textBox.style.backgroundColor = "white"; // 背景色を白色にする
+       }
+     };
+
+     //======================================================================
+      // 認識結果の取得時に実行されるイベントハンドラ
+      recognition.onresult = function(event) {
+        // 認識結果を取得
+        const transcript = event.results[0][0].transcript;
+
+        // 取得した認識結果をテキストボックスに表示
+        writeToTextArea(transcript);
+      };
+     //======================================================================
+
+//   }
+
+     //======================================================================
+    // 音声認識を開始する関数（連続）
+    function startSpeechRecognition_2() {
+        textBox.focus()
+
+　　　　kurikaesi_flg = 2;
+        textBox.style.backgroundColor = "#FF9966"; // 背景色をオレンジ色にする
+
+      //if (recognition) {
+        recognition.start();
+      //}
+    }
+
+    //======================================================================
+    // 音声認識を開始する関数（単回）
+    function startSpeechRecognition_1() {
+        textBox.focus()
+
+　　　　kurikaesi_flg = 1;
+        textBox.style.backgroundColor = "#FF9966"; // 背景色をオレンジ色にする
+
+      //if (recognition) {
+        recognition.start();
+      //}
+    }
+
+
+     //======================================================================
+    // 音声認識を停止する関数
+    function stopSpeechRecognition() {
+      //if (recognition) {
+        kurikaesi_flg = 0;
+        textBox.style.backgroundColor = "white"; // 背景色を白色にする
+
+        recognition.stop();
+        textBox.focus();
+      //}
+    }
+
+    //======================================================================
+    //読み上げ停止
+    function yomiage_stop() {
+        speechSynthesis.cancel();
+        textBox.focus();
+    }
+
+    //======================================================================
+    // 読み上げ確認
+    function yomiage_kakunin(){
+        stopSpeechRecognition();
+
+        speechSynthesis.cancel();//Chromeで読み上げが打ち切られた時に、読み上げを再会するために必要な行。
+
+        var text0 =textBox.value.slice(textBox.selectionStart, textBox.selectionEnd);
+
+        //if (text0.length>100){
+        //  window.alert("読み上げは100文字まで");
+        //}else{
+            var speech = new SpeechSynthesisUtterance( text0);
+            speechSynthesis.speak(speech);
+        //}
+
+        textBox.focus()
+    }
+
+    //======================================================================
+    function writeToTextArea(text) {
+
+       startPos = textBox.selectionStart;
+       endPos = textBox.selectionEnd;
+
+        textBox.value = textBox.value.slice(0, textBox.selectionStart) + text + textBox.value.slice(textBox.selectionEnd);
+
+         endPos =  startPos  + text.length;
+         startPos =endPos;
+
+	textBox.setSelectionRange(startPos, endPos);
+        textBox.focus()
+    }
+
+     //======================================================================
+    function textBox_copy(){ // textBoxの文字列全体をコピーする
+      navigator.clipboard.writeText(textBox.value);
+    }
+
+  </script>
+</body>
+</html>
